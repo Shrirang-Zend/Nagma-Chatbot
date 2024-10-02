@@ -1,4 +1,47 @@
+intents = {
+    'recommend_songs': [
+        'recommend songs',
+        'recommend some songs',
+        'song recommendations',
+        'music recommendations',
+        'i need new music',
+        'suggest songs',
+        'suggest some music',
+        'i need new songs',
+        'recommend music for me',
+        'i want song recommendations',
+        'can you recommend songs',
+        'give me song recommendations',
+    ],
+    'artist_information': [
+        'who is',
+        'tell me about the artist',
+        'artist information for',
+        'information about',
+        'details about artist',
+        'give me info about',
+    ],
+    'song_information': [
+        'tell me about the song',
+        'song information for',
+        'information about song',
+        'details about song',
+        'give me info about the song',
+    ],
+    'trending_songs': [
+        'what are the current trending songs',
+        'list the top songs right now',
+        'which songs are popular this month',
+        'show me trending songs',
+        'popular songs right now',
+    ]
+}
+
 responses = {
+    "song information": "To get information about a specific song, please ask: 'Tell me about [song name]'",
+    "artist information": "To get information about an artist, please ask: 'Who is [artist name]?'",
+    "recommend songs": "I can recommend songs based on your preferences. Just say 'Recommend some songs for me'",
+    "trending songs": "To get a list of trending songs from the last month, ask 'What are the current trending songs?'",
     "song information": "To get information about a specific song, please ask: 'Tell me about [song name]'",
     "artist information": "To get information about an artist, please ask: 'Who is [artist name]?'",
     "album information": "To get information about an album, please ask: 'Tell me about the album [album name]'",

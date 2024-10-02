@@ -44,8 +44,8 @@ def extract_numeric_range(text):
         list: A list containing the lower and upper bounds of the range.
     """
     patterns = [
-        r'(\d+)\s*-\s*(\d+)',
-        r'between\s+(\d+)\s+and\s+(\d+)',
+        r'(\d+\.?\d*)\s*-\s*(\d+\.?\d*)',
+        r'between\s+(\d+\.?\d*)\s+and\s+(\d+\.?\d*)',
     ]
     
     for pattern in patterns:

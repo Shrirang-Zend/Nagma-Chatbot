@@ -5,7 +5,7 @@ from datetime import datetime
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
 from rapidfuzz import process, fuzz  # Using RapidFuzz for better performance
-from responses import responses
+from responses import responses, intents
 from utils import parse_release_date, format_release_date, extract_numeric_range
 
 class NagmaChatbot:
@@ -15,7 +15,7 @@ class NagmaChatbot:
 
     def __init__(self, data_path):
         """
-        Initializes the MusicChatbot with a dataset.
+        Initializes the NagmaChatbot with a dataset.
 
         Parameters:
             data_path (str): Path to the CSV file containing music data.
@@ -46,175 +46,72 @@ class NagmaChatbot:
             print("Error: The file could not be parsed as a CSV.")
             return pd.DataFrame()
 
-    def parse_feature_query(self, query):
+    # ... [Other methods remain the same] ...
+
+    def get_artist_stats(self, artist_name):
         """
-        Parses queries about musical features.
+        Retrieves statistics and information about a specific artist.
 
         Parameters:
-            query (str): User input query.
+            artist_name (str): Name of the artist.
 
         Returns:
-            tuple: (feature, range_values)
+            dict or str: Dictionary containing artist stats or an error message.
         """
-        features = {
-            'energy': {'high': (0.7, 1.0), 'medium': (0.4, 0.7), 'low': (0, 0.4)},
-            'valence': {'high': (0.7, 1.0), 'medium': (0.4, 0.7), 'low': (0, 0.4)},
-            'danceability': {'high': (0.7, 1.0), 'medium': (0.4, 0.7), 'low': (0, 0.4)},
-            'acousticness': {'high': (0.7, 1.0), 'medium': (0.4, 0.7), 'low': (0, 0.4)},
-            'instrumentalness': {'high': (0.7, 1.0), 'medium': (0.4, 0.7), 'low': (0, 0.4)},
-            'speechiness': {'high': (0.7, 1.0), 'medium': (0.4, 0.7), 'low': (0, 0.4)},
-            'tempo': {'high': (120, 300), 'medium': (76, 120), 'low': (0, 76)}
+        artist_songs = self.df[self.df['artists'].str.contains(artist_name, case=False, na=False)]
+        if artist_songs.empty:
+            return f"I couldn't find any songs by {artist_name} in my database."
+
+        stats = {
+            'total_songs': len(artist_songs),
+            'avg_popularity': artist_songs['popularity'].mean() if 'popularity' in self.df.columns else None,
+            'most_recent': artist_songs['release_date'].max() if 'release_date' in self.df.columns else None,
         }
-        
-        for feature, ranges in features.items():
-            if feature in query:
-                # Check for exact numeric range
-                numeric_range = extract_numeric_range(query)
-                if numeric_range:
-                    return feature, numeric_range
-                
-                # Check for qualitative descriptors
-                for descriptor, range_values in ranges.items():
-                    if descriptor in query:
-                        return feature, range_values
-                
-                # Default to 'high' if no range specified
-                return feature, ranges['high']
-        
-        return None, None
 
-    def improve_song_matching(self, query):
+        feature_stats = {}
+        for feature in ['valence', 'energy', 'danceability', 'tempo', 'acousticness', 'instrumentalness', 'speechiness', 'loudness']:
+            if feature in self.df.columns:
+                feature_stats[feature] = {
+                    'mean': artist_songs[feature].mean(),
+                    'min': artist_songs[feature].min(),
+                    'max': artist_songs[feature].max()
+                }
+
+        return {'basic_stats': stats, 'feature_stats': feature_stats}
+
+    def format_artist_info(self, artist_info, artist_name):
         """
-        Matches song names in queries using fuzzy matching.
+        Formats artist statistics into a readable string.
 
         Parameters:
-            query (str): User input query.
+            artist_info (dict or str): Artist statistics or error message.
+            artist_name (str): Name of the artist.
 
         Returns:
-            pd.Series: Matched song row.
+            str: Formatted artist information.
         """
-        # Clean up the query
-        release_indicators = ['when', 'release', 'came out']
-        clean_query = query
-        for indicator in release_indicators:
-            clean_query = clean_query.replace(indicator, '').strip()
-        
-        # Try exact match
-        exact_match = self.df[self.df['name'].str.lower() == clean_query.lower()]
-        if not exact_match.empty:
-            return exact_match.iloc[0]
-        
-        # Fuzzy matching
-        matches = process.extract(
-            clean_query.lower(), 
-            self.df['name'].str.lower(), 
-            scorer=fuzz.token_set_ratio, 
-            limit=5
-        )
-        for match in matches:
-            if match[1] >= 70:
-                song = self.df.iloc[match[2]]
-                return song
-        
-        return None
+        if isinstance(artist_info, str):
+            return artist_info  # Return the error message
 
-    def get_user_preferences_via_chat(self):
-        """
-        Collects user preferences through conversational prompts.
+        basic_stats = artist_info['basic_stats']
+        feature_stats = artist_info['feature_stats']
 
-        Returns:
-            dict: User preferences for features.
-        """
-        preferences = {}
-        features = [
-            'valence', 
-            'energy', 
-            'danceability', 
-            'acousticness',
-            'instrumentalness',
-            'speechiness',
-            'tempo',
-            'loudness'
-        ]
-        
-        print("To recommend songs, I need to know your preferences.")
-        for feature in features:
-            while True:
-                user_input = input(f"Please rate {feature} on a scale (e.g., 0.5): ")
-                try:
-                    value = float(user_input)
-                    if feature == 'tempo':
-                        if 0 <= value <= 300:
-                            preferences[feature] = value
-                            break
-                        else:
-                            print("Tempo should be between 0 and 300 BPM.")
-                    elif feature == 'loudness':
-                        if -60 <= value <= 0:
-                            preferences[feature] = value
-                            break
-                        else:
-                            print("Loudness should be between -60 and 0 dB.")
-                    else:
-                        if 0 <= value <= 1:
-                            preferences[feature] = value
-                            break
-                        else:
-                            print(f"{feature.capitalize()} should be between 0 and 1.")
-                except ValueError:
-                    print("Please enter a valid number.")
-        return preferences
+        response = f"Here's what I know about {artist_name}:\n"
+        response += f"- Total songs in the database: {basic_stats['total_songs']}\n"
 
-    def recommend_songs(self, preferences, n=5):
-        """
-        Recommends songs based on user preferences.
+        if basic_stats['avg_popularity'] is not None:
+            response += f"- Average popularity: {basic_stats['avg_popularity']:.2f}/100\n"
 
-        Parameters:
-            preferences (dict): User preferences for features.
-            n (int): Number of songs to recommend.
+        if basic_stats['most_recent'] is not None and pd.notnull(basic_stats['most_recent']):
+            response += f"- Most recent release: {format_release_date(basic_stats['most_recent'])}\n"
 
-        Returns:
-            list: List of recommended songs.
-        """
-        available_features = [col for col in preferences.keys() if col in self.df.columns]
-        if not available_features:
-            return "I'm sorry, but I don't have enough feature information to make recommendations."
+        response += "\nMusical features:\n"
+        for feature, stats in feature_stats.items():
+            response += f"- {feature.capitalize()}:\n"
+            response += f"  Average: {stats['mean']:.2f}\n"
+            response += f"  Range: {stats['min']:.2f} - {stats['max']:.2f}\n"
 
-        # Normalize data
-        scaler = MinMaxScaler()
-        df_normalized = pd.DataFrame(scaler.fit_transform(self.df[available_features]), columns=available_features)
-        user_profile = pd.DataFrame([preferences])[available_features]
-        user_normalized = pd.DataFrame(scaler.transform(user_profile), columns=available_features)
-
-        # Calculate cosine similarity
-        similarity = cosine_similarity(user_normalized, df_normalized)
-        similar_indices = similarity.argsort()[0][-2*n:][::-1]
-        recommended_indices = np.random.choice(similar_indices, n, replace=False)
-        recommendations = self.df.iloc[recommended_indices]
-        return recommendations[['name', 'artists', 'album', 'release_date']].to_dict('records')
-
-    def get_trending_songs(self):
-        """
-        Retrieves trending songs based on popularity.
-
-        Returns:
-            list: List of trending songs.
-        """
-        if 'popularity' not in self.df.columns:
-            return "I'm sorry, I can't determine trending songs without popularity data."
-
-        if 'release_date' in self.df.columns:
-            current_date = datetime.now()
-            last_month = current_date - pd.DateOffset(months=1)
-            recent_songs = self.df[self.df['release_date'] > last_month]
-            if not recent_songs.empty:
-                trending = recent_songs.nlargest(5, 'popularity')
-            else:
-                trending = self.df.nlargest(5, 'popularity')
-        else:
-            trending = self.df.nlargest(5, 'popularity')
-
-        return trending[['name', 'artists', 'popularity', 'album', 'release_date']].to_dict('records')
+        return response
 
     def get_response(self, user_input):
         """
@@ -228,26 +125,72 @@ class NagmaChatbot:
         """
         user_input = user_input.lower()
 
-        if "recommend" in user_input and "song" in user_input:
-            print("Great! I'd be happy to recommend some songs for you.")
-            preferences = self.get_user_preferences_via_chat()
-            recommended_songs = self.recommend_songs(preferences)
-            response = "Based on your preferences, here are some song recommendations:\n"
-            for song in recommended_songs:
-                response += f"- {song['name']} by {song['artists']}"
-                if song.get('album'):
-                    response += f" from the album '{song['album']}'"
-                if song.get('release_date'):
-                    response += f" (Released: {format_release_date(song['release_date'])})"
-                response += "\n"
-            return response
+        # Iterate over intents
+        for intent_name, phrases in intents.items():
+            # Perform fuzzy matching between user input and intent phrases
+            matched_phrase, score, _ = process.extractOne(
+                user_input, phrases, scorer=fuzz.token_set_ratio
+            )
+            if score >= 70:
+                if intent_name == 'recommend_songs':
+                    # Handle song recommendation
+                    print("Great! I'd be happy to recommend some songs for you.")
+                    preferences = self.get_user_preferences_via_chat()
+                    recommended_songs = self.recommend_songs(preferences)
+                    if isinstance(recommended_songs, str):
+                        return recommended_songs
+                    response = "Based on your preferences, here are some song recommendations:\n"
+                    for song in recommended_songs:
+                        response += f"- {song['name']} by {song['artists']}"
+                        if song.get('album'):
+                            response += f" from the album '{song['album']}'"
+                        if song.get('release_date'):
+                            response += f" (Released: {format_release_date(song['release_date'])})"
+                        response += "\n"
+                    return response
 
-        # Additional handlers for other intents...
+                elif intent_name == 'artist_information':
+                    # Extract artist name from user input
+                    artist_name = user_input
+                    for phrase in phrases:
+                        if phrase in user_input:
+                            artist_name = user_input.replace(phrase, '').strip()
+                            break
+                    artist_info = self.get_artist_stats(artist_name)
+                    return self.format_artist_info(artist_info, artist_name)
 
-        # Fallback response
-        matched_intent, score = process.extractOne(user_input, responses.keys(), scorer=fuzz.token_set_ratio)
+                elif intent_name == 'song_information':
+                    # Extract song name from user input
+                    song_name = user_input
+                    for phrase in phrases:
+                        if phrase in user_input:
+                            song_name = user_input.replace(phrase, '').strip()
+                            break
+                    song_info = self.get_song_info(song_name)
+                    return song_info
+
+                elif intent_name == 'trending_songs':
+                    # Handle trending songs request
+                    trending_songs = self.get_trending_songs()
+                    if isinstance(trending_songs, str):
+                        return trending_songs
+                    response = "Here are the current trending songs:\n"
+                    for song in trending_songs:
+                        response += f"- {song['name']} by {song['artists']}"
+                        if 'popularity' in song:
+                            response += f" (Popularity: {song['popularity']})"
+                        response += "\n"
+                    return response
+
+                # Add more intent handling here as needed
+
+        # Fallback response using the responses dictionary
+        matched_intent, score, _ = process.extractOne(
+            user_input, responses.keys(), scorer=fuzz.token_set_ratio
+        )
         if score >= 70:
             return responses[matched_intent]
+
         return "I'm not sure what you're asking. Could you rephrase your question?"
 
     def run(self):
