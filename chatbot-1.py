@@ -16,7 +16,7 @@ from datetime import datetime
 
 # Load the music dataset
 def load_dataset():
-    df = pd.read_csv('/Users/shrirangzend/Desktop/Mundane College Subjects/MPR/Sem5 MPR/Chatbot/data.csv')
+    df = pd.read_csv('./data.csv')
     if 'release_date' in df.columns:
         df['release_date'] = df['release_date'].apply(parse_release_date)
     return df
