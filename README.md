@@ -1,4 +1,4 @@
-# Enhanced Music Chatbot
+# Nagma Music Chatbot
 
 This project is an enhanced music chatbot designed to interact with users, providing song recommendations, artist information, trending songs, and more. It leverages a music dataset to answer queries related to songs, artists, and musical features.
 
