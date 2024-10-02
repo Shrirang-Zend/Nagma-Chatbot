@@ -1,4 +1,4 @@
-# Music Streaming Service Chatbot
+# Nagma Chatbot
 
 An intelligent chatbot that helps users discover music, get song recommendations, and explore artist statistics based on various musical features and preferences.
 
@@ -28,7 +28,7 @@ python-Levenshtein==0.21.1  # Optional, but improves fuzzywuzzy performance
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/music-streaming-chatbot.git
+git clone https://github.com/Shrirang-Zend/Nagma-Chatbot.git
 cd music-streaming-chatbot
 ```
 
@@ -100,12 +100,3 @@ Chatbot: [Lists songs with high energy ratings]
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Dataset source: [Add your dataset source here]
-- Inspired by [Add any inspirations or references here]
