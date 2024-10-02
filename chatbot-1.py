@@ -447,7 +447,7 @@ def get_response(user_input, df):
 
 # Main chatbot function
 def chatbot():
-    print("Welcome to the Enhanced Music Chatbot!")
+    print("Welcome to the Nagma Chatbot!")
     print("I can help you with:")
     print("- Finding similar songs")
     print("- Getting artist statistics")
