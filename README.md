@@ -32,8 +32,8 @@ This project is an enhanced music chatbot designed to interact with users, provi
 1. **Clone the Repository**
 
    ```bash
-   git clone [https://github.com/yourusername/your-repo.git](https://github.com/Shrirang-Zend/Nagma-Chatbot)
-   cd your-repo
+   git clone https://github.com/Shrirang-Zend/Nagma-Chatbot.git
+   cd Nagma-Chatbot
    ```
 
 2. **Create a Virtual Environment (Optional but Recommended)**
