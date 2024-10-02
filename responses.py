@@ -15,6 +15,7 @@ intents = {
     ],
     'artist_information': [
         'who is',
+        'tell me about artist',
         'tell me about the artist',
         'artist information for',
         'information about',
